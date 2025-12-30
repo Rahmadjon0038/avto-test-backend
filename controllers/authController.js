@@ -4,11 +4,11 @@ const jwt = require('jsonwebtoken');
 
 // Token yordamchilari
 const generateAccessToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 };
 
 const generateRefreshToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '30d' });
+    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '15d' });
 };
 
 // 1. REGISTER
