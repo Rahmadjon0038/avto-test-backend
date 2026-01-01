@@ -28,7 +28,7 @@ exports.register = async (req, res) => {
     }
 };
 
-// 2. LOGIN
+// LOGIN qismini yangilaymiz
 exports.login = async (req, res) => {
     try {
         const { phone, password } = req.body;
@@ -44,7 +44,10 @@ exports.login = async (req, res) => {
             res.json({
                 role: user.role,
                 accessToken,
-                refreshToken
+                refreshToken,
+                // Obuna ma'lumotlarini ham qo'shib yuboramiz
+                subscriptionEnd: user.subscriptionEnd,
+                isSubscribed: user.isSubscribed
             });
         } else {
             res.status(401).json({ message: "Telefon raqami yoki parol xato!" });

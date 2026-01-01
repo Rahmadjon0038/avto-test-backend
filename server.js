@@ -12,6 +12,9 @@ const { initUserTable } = require('./models/User');
 const authRoutes = require('./routes/authRoutes');
 const { initTicketTable } = require('./models/Ticket');
 const ticketRoutes = require('./routes/ticketRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const questionRoutes = require('./routes/questionRoutes');
+const { initQuestionTable } = require('./models/Question');
 
 const app = express();
 
@@ -30,8 +33,14 @@ app.use('/api/auth', authRoutes);
 
 // ... tiket
 app.use('/api/tickets', ticketRoutes);
+// -------  ubuna -----
+app.use('/api/subscription', subscriptionRoutes);
 
 // startServer ichida
+// --------- bilet ichiga queston qoshish -------
+app.use('/api/questions', questionRoutes);
+
+
 
 
 // --------------------- ROOT ROUTE ---------------------
@@ -50,6 +59,9 @@ const startServer = async () => {
 
         // 3- tiked tableni yasash
         await initTicketTable();
+
+        // 4 ticket ichidaga queston yasash
+        await initQuestionTable();
 
         // 3️⃣ Boshqa jadvallarni sinxronizatsiya qilish
         // force: false → jadval mavjud bo‘lsa saqlanadi, yangi ustun qo‘shadi

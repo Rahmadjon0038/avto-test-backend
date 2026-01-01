@@ -6,7 +6,7 @@ const {
   getMe,
   refreshToken
 } = require('../controllers/authController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect} = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
