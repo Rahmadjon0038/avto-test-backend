@@ -1,14 +1,86 @@
 const express = require('express');
 const router = express.Router();
-const { createQuestion, getQuestionsByTicket } = require('../controllers/questionController');
+const { createQuestion, getQuestionsByTicket, deleteQuestion, updateQuestion } = require('../controllers/questionController');
 const { protect } = require('../middlewares/authMiddleware');
+const multer = require('multer');
+const path = require('path');
+
+// Multer config (simple, stores in uploads/)
+const storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, 'uploads/');
+	},
+	filename: function (req, file, cb) {
+		cb(null, Date.now() + '-' + file.originalname);
+	}
+});
+const upload = multer({ storage });
 
 /**
  * @swagger
- * tags:
- *   - name: Questions
- *     description: Biletlar ichidagi savollar (testlar) bilan ishlash
+ * /api/questions/{id}:
+ *   put:
+ *     summary: Savolni yangilash (Admin)
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Savol ID raqami
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               questionText:
+ *                 type: string
+ *               options:
+ *                 type: string
+ *                 description: JSON array string, e.g. '["A","B"]'
+ *               correctOption:
+ *                 type: integer
+ *               explanation:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Savol yangilandi
+ *       404:
+ *         description: Savol topilmadi
  */
+router.put('/:id', protect, upload.single('image'), updateQuestion);
+/**
+ * @swagger
+ * /api/questions/{id}:
+ *   delete:
+ *     summary: Savolni o'chirish (Admin)
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Savol ID raqami
+ *     responses:
+ *       200:
+ *         description: Savol o'chirildi
+ *       404:
+ *         description: Savol topilmadi
+ */
+router.delete('/:id', protect, deleteQuestion);
+
+
 
 /**
  * @swagger
@@ -21,7 +93,7 @@ const { protect } = require('../middlewares/authMiddleware');
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -37,17 +109,15 @@ const { protect } = require('../middlewares/authMiddleware');
  *               questionText:
  *                 type: string
  *                 description: Savolning matni
- *                 example: "Ushbu yo'l belgisi nimani anglatadi?"
+ *                 example: Ushbu yo'l belgisi nimani anglatadi?
  *               image:
  *                 type: string
- *                 description: Savolga tegishli rasm URL manzili
- *                 example: "https://example.com/images/stop-sign.jpg"
+ *                 format: binary
+ *                 description: Savolga tegishli rasm fayli
  *               options:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Javob variantlari massivi
- *                 example: ["To'xtash taqiqlangan", "Asosiy yo'l", "To'xtamasdan harakatlanish taqiqlangan"]
+ *                 type: string
+ *                 description: Javob variantlari massivi (JSON string sifatida yuboriladi)
+ *                 example: "[\"To'xtash taqiqlangan\", \"Asosiy yo'l\", \"To'xtamasdan harakatlanish taqiqlangan\"]"
  *               correctOption:
  *                 type: integer
  *                 description: To'g'ri javobning massivdagi indeksi (0 dan boshlanadi)
@@ -55,7 +125,7 @@ const { protect } = require('../middlewares/authMiddleware');
  *               explanation:
  *                 type: string
  *                 description: User noto'g'ri javob berganda chiqadigan tushuntirish
- *                 example: "Ushbu belgi 2.5 belgisi hisoblanib, barcha haydovchilardan to'xtashni talab qiladi."
+ *                 example: Ushbu belgi 2.5 belgisi hisoblanib, barcha haydovchilardan to'xtashni talab qiladi.
  *     responses:
  *       201:
  *         description: Savol muvaffaqiyatli yaratildi
@@ -64,7 +134,7 @@ const { protect } = require('../middlewares/authMiddleware');
  *       404:
  *         description: Bilet topilmadi
  */
-router.post('/', protect, createQuestion);
+router.post('/', protect, upload.single('image'), createQuestion);
 
 /**
  * @swagger

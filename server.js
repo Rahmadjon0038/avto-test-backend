@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 
+
 require('dotenv').config();
 
 const { connectDB, sequelize } = require('./config/db');
@@ -16,6 +17,8 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const { initQuestionTable } = require('./models/Question');
 
+
+const path = require('path');
 const app = express();
 
 // --------------------- MIDDLEWARES ---------------------
@@ -24,6 +27,8 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan('dev'));
 app.use(express.json());
 
+// uploads papkasini public qilish
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --------------------- SWAGGER ROUTE ---------------------
 // Swagger UI: http://localhost:5000/api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
