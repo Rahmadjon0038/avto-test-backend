@@ -16,14 +16,24 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const { initQuestionTable } = require('./models/Question');
+const { initFinalExamTable } = require('./models/FinalExam');
+const finalExamRoutes = require('./routes/finalExamRoutes');
 
 
 const path = require('path');
 const app = express();
 
 // --------------------- MIDDLEWARES ---------------------
-app.use(cors());
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 
@@ -44,6 +54,9 @@ app.use('/api/subscription', subscriptionRoutes);
 // startServer ichida
 // --------- bilet ichiga queston qoshish -------
 app.use('/api/questions', questionRoutes);
+
+// --------- final imtihon -------
+app.use('/api/final-exam', finalExamRoutes);
 
 
 
@@ -67,6 +80,9 @@ const startServer = async () => {
 
         // 4 ticket ichidaga queston yasash
         await initQuestionTable();
+
+        // 5 final exam tableni yasash
+        await initFinalExamTable();
 
         // 3️⃣ Boshqa jadvallarni sinxronizatsiya qilish
         // force: false → jadval mavjud bo‘lsa saqlanadi, yangi ustun qo‘shadi

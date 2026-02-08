@@ -120,3 +120,162 @@ exports.getQuestionsByTicket = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// 5. JSON fayl orqali ko'plab savollarni import qilish
+exports.importQuestionsFromJson = async (req, res) => {
+    try {
+        const { ticketId, questions } = req.body;
+
+        // ticketId tekshirish
+        if (!ticketId) {
+            return res.status(400).json({ message: "ticketId majburiy" });
+        }
+
+        // Bilet mavjudligini tekshirish
+        const ticket = await Ticket.findByPk(ticketId);
+        if (!ticket) {
+            return res.status(404).json({ message: "Bunday bilet topilmadi" });
+        }
+
+        // Savollar massivini tekshirish
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ message: "questions massivi majburiy va bo'sh bo'lmasligi kerak" });
+        }
+
+        const createdQuestions = [];
+        const errors = [];
+
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            
+            // Har bir savol uchun validatsiya
+            if (!q.questionText) {
+                errors.push({ index: i, error: "questionText majburiy" });
+                continue;
+            }
+            if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
+                errors.push({ index: i, error: "options kamida 2 ta variant bo'lishi kerak" });
+                continue;
+            }
+            if (q.correctOption === undefined || q.correctOption < 0 || q.correctOption >= q.options.length) {
+                errors.push({ index: i, error: "correctOption noto'g'ri" });
+                continue;
+            }
+
+            try {
+                const newQuestion = await Question.create({
+                    ticketId,
+                    questionText: q.questionText,
+                    options: q.options,
+                    correctOption: q.correctOption,
+                    explanation: q.explanation || null,
+                    image: q.image || null
+                });
+                createdQuestions.push(newQuestion);
+            } catch (err) {
+                errors.push({ index: i, error: err.message });
+            }
+        }
+
+        res.status(201).json({
+            message: `${createdQuestions.length} ta savol muvaffaqiyatli qo'shildi`,
+            totalSent: questions.length,
+            successCount: createdQuestions.length,
+            errorCount: errors.length,
+            createdQuestions,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 6. JSON fayl yuklash orqali import (multer bilan)
+exports.importQuestionsFromFile = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "JSON fayl yuklanmadi" });
+        }
+
+        const fs = require('fs');
+        const filePath = req.file.path;
+        
+        // Faylni o'qish
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        let jsonData;
+        
+        try {
+            jsonData = JSON.parse(fileContent);
+        } catch (e) {
+            fs.unlinkSync(filePath); // Faylni o'chirish
+            return res.status(400).json({ message: "Noto'g'ri JSON format" });
+        }
+
+        // Faylni o'chirish (endi kerak emas)
+        fs.unlinkSync(filePath);
+
+        const { ticketId, questions } = jsonData;
+
+        // ticketId tekshirish
+        if (!ticketId) {
+            return res.status(400).json({ message: "JSON ichida ticketId majburiy" });
+        }
+
+        // Bilet mavjudligini tekshirish
+        const ticket = await Ticket.findByPk(ticketId);
+        if (!ticket) {
+            return res.status(404).json({ message: "Bunday bilet topilmadi" });
+        }
+
+        // Savollar massivini tekshirish
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ message: "JSON ichida questions massivi majburiy" });
+        }
+
+        const createdQuestions = [];
+        const errors = [];
+
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            
+            if (!q.questionText) {
+                errors.push({ index: i, error: "questionText majburiy" });
+                continue;
+            }
+            if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
+                errors.push({ index: i, error: "options kamida 2 ta variant bo'lishi kerak" });
+                continue;
+            }
+            if (q.correctOption === undefined || q.correctOption < 0 || q.correctOption >= q.options.length) {
+                errors.push({ index: i, error: "correctOption noto'g'ri" });
+                continue;
+            }
+
+            try {
+                const newQuestion = await Question.create({
+                    ticketId,
+                    questionText: q.questionText,
+                    options: q.options,
+                    correctOption: q.correctOption,
+                    explanation: q.explanation || null,
+                    image: q.image || null
+                });
+                createdQuestions.push(newQuestion);
+            } catch (err) {
+                errors.push({ index: i, error: err.message });
+            }
+        }
+
+        res.status(201).json({
+            message: `${createdQuestions.length} ta savol muvaffaqiyatli qo'shildi`,
+            ticketId,
+            ticketName: ticket.name,
+            totalSent: questions.length,
+            successCount: createdQuestions.length,
+            errorCount: errors.length,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

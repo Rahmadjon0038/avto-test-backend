@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { createQuestion, getQuestionsByTicket, deleteQuestion, updateQuestion } = require('../controllers/questionController');
+const { 
+    createQuestion, 
+    getQuestionsByTicket, 
+    deleteQuestion, 
+    updateQuestion,
+    importQuestionsFromJson,
+    importQuestionsFromFile 
+} = require('../controllers/questionController');
 const { protect } = require('../middlewares/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -15,6 +22,26 @@ const storage = multer.diskStorage({
 	}
 });
 const upload = multer({ storage });
+
+// JSON fayl uchun alohida multer config
+const jsonStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'import-' + Date.now() + '.json');
+    }
+});
+const jsonUpload = multer({ 
+    storage: jsonStorage,
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype === 'application/json' || path.extname(file.originalname).toLowerCase() === '.json') {
+            cb(null, true);
+        } else {
+            cb(new Error('Faqat JSON fayl yuklash mumkin'), false);
+        }
+    }
+});
 
 /**
  * @swagger
@@ -174,5 +201,94 @@ router.post('/', protect, upload.single('image'), createQuestion);
  *         description: Bilet topilmadi
  */
 router.get('/ticket/:ticketId', protect, getQuestionsByTicket);
+
+/**
+ * @swagger
+ * /api/questions/import:
+ *   post:
+ *     summary: JSON orqali ko'plab savollarni import qilish (Admin)
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ticketId
+ *               - questions
+ *             properties:
+ *               ticketId:
+ *                 type: integer
+ *                 description: Savollar qaysi biletga tegishli
+ *                 example: 1
+ *               questions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - questionText
+ *                     - options
+ *                     - correctOption
+ *                   properties:
+ *                     questionText:
+ *                       type: string
+ *                       example: "Yo'l belgisi nimani anglatadi?"
+ *                     options:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["To'xtash", "Davom etish", "Sekinlash", "Chapga burulish"]
+ *                     correctOption:
+ *                       type: integer
+ *                       example: 0
+ *                     explanation:
+ *                       type: string
+ *                       example: "Bu belgi to'xtashni anglatadi"
+ *                     image:
+ *                       type: string
+ *                       example: "/uploads/belgi1.png"
+ *     responses:
+ *       201:
+ *         description: Savollar muvaffaqiyatli import qilindi
+ *       400:
+ *         description: Noto'g'ri ma'lumotlar
+ *       404:
+ *         description: Bilet topilmadi
+ */
+router.post('/import', protect, importQuestionsFromJson);
+
+/**
+ * @swagger
+ * /api/questions/import-file:
+ *   post:
+ *     summary: JSON fayl yuklash orqali savollarni import qilish (Admin)
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "JSON fayl. Format: { ticketId: 1, questions: [...] }"
+ *     responses:
+ *       201:
+ *         description: Savollar muvaffaqiyatli import qilindi
+ *       400:
+ *         description: Noto'g'ri JSON format yoki fayl yuklanmadi
+ *       404:
+ *         description: Bilet topilmadi
+ */
+router.post('/import-file', protect, jsonUpload.single('file'), importQuestionsFromFile);
 
 module.exports = router;
