@@ -18,6 +18,8 @@ const questionRoutes = require('./routes/questionRoutes');
 const { initQuestionTable } = require('./models/Question');
 const { initFinalExamTable } = require('./models/FinalExam');
 const finalExamRoutes = require('./routes/finalExamRoutes');
+const { initUserMistakeTable } = require('./models/UserMistake');
+const mistakeRoutes = require('./routes/mistakeRoutes');
 
 
 const path = require('path');
@@ -57,6 +59,7 @@ app.use('/api/questions', questionRoutes);
 
 // --------- final imtihon -------
 app.use('/api/final-exam', finalExamRoutes);
+app.use('/api/mistakes', mistakeRoutes);
 
 
 
@@ -83,6 +86,9 @@ const startServer = async () => {
 
         // 5 final exam tableni yasash
         await initFinalExamTable();
+
+        // 6 user xatolari jadvalini yasash
+        await initUserMistakeTable();
 
         // 3️⃣ Boshqa jadvallarni sinxronizatsiya qilish
         // force: false → jadval mavjud bo‘lsa saqlanadi, yangi ustun qo‘shadi
